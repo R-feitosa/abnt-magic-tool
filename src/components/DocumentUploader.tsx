@@ -4,15 +4,16 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
-
-// Importações das novas bibliotecas
 import mammoth from 'mammoth'
-import * as pdfjs from 'pdfjs-dist'
 
-// Configuração do worker para o pdf.js
-// Você precisa garantir que este arquivo esteja acessível na sua pasta 'public'
-// Copie-o de 'node_modules/pdfjs-dist/build/pdf.worker.mjs' para 'public/pdf.worker.mjs'
-pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.mjs`
+// --- INÍCIO DA MUDANÇA ---
+// Importa o pdf.js e o worker de uma forma que o Vite entende
+import * as pdfjs from 'pdfjs-dist'
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'
+
+// Configura o worker usando a importação direta
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
+// --- FIM DA MUDANÇA ---
 
 interface DocumentUploaderProps {
   onTextSubmit: (text: string) => void
