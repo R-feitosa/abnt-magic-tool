@@ -1,73 +1,64 @@
-# Welcome to your Lovable project
+<div align="center">
+  <img src="src/assets/logo.png" alt="Logo Feitosa Group" width="200"/>
 
-## Project info
+  <h1 align="center">Formatador ABNT Magic Tool</h1>
 
-**URL**: https://lovable.dev/projects/9f6ed51a-b696-49a7-831e-814d6424d1d4
+  <p align="center">
+    Formate seus documentos acadêmicos automaticamente de acordo com as normas ABNT.
+    <br />
+    Uma ferramenta profissional desenvolvida para o Feitosa Group.
+  </p>
+</div>
 
-## How can I edit this code?
+<br />
 
-There are several ways of editing your application.
+<div align="center">
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+</div>
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9f6ed51a-b696-49a7-831e-814d6424d1d4) and start prompting.
+## 📸 Tela da Aplicação
 
-Changes made via Lovable will be committed automatically to this repo.
+<p align="center">
+  <img src="./screenshot.png" alt="Interface da aplicação" width="700">
+</p>
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## ✨ Funcionalidades
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Upload Flexível:** Envie seus documentos arrastando e soltando (`drag and drop`) ou selecionando o arquivo.
+- **Suporte a Múltiplos Formatos:** Extrai texto de arquivos `.docx`, `.pdf` e `.txt`.
+- **Entrada Direta:** Permite colar o texto diretamente na interface para formatação rápida.
+- **Formatação Automática:** Aplica as principais regras da ABNT ao seu texto com um único clique.
+  - Margens (3cm superior/esquerda, 2cm inferior/direita).
+  - Fonte Arial 12pt.
+  - Espaçamento 1,5 entre linhas.
+  - Alinhamento justificado.
+  - Recuo de 1,25cm no início dos parágrafos.
+- **Pré-visualização:** Visualize como o documento ficará antes de baixar.
+- **Download em .DOCX:** Baixe o documento final já formatado, pronto para ser utilizado.
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🚀 Tecnologias Utilizadas
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Este projeto foi construído com as seguintes tecnologias:
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Frontend:**
+  - [React](https://reactjs.org/)
+  - [Vite](https://vitejs.dev/)
+  - [TypeScript](https://www.typescriptlang.org/)
+  - [Tailwind CSS](https://tailwindcss.com/)
+  - [shadcn/ui](https://ui.shadcn.com/) para componentes
+- **Bibliotecas Principais:**
+  - [React Router DOM](https://reactrouter.com/) para roteamento.
+  - `docx` para geração de arquivos `.docx`.
+  - `mammoth.js` para extração de texto de `.docx`.
+  - `pdfjs-dist` para extração de texto de `.pdf`.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/9f6ed51a-b696-49a7-831e-814d6424d1d4) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
