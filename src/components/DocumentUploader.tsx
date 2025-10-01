@@ -1,62 +1,119 @@
-import { useState } from "react";
-import { Upload, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { toast } from "sonner";
+import { useState } from 'react'
+import { Upload, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Card } from '@/components/ui/card'
+import { toast } from 'sonner'
+
+// Importações das novas bibliotecas
+import mammoth from 'mammoth'
+import * as pdfjs from 'pdfjs-dist'
+
+// Configuração do worker para o pdf.js
+// Você precisa garantir que este arquivo esteja acessível na sua pasta 'public'
+// Copie-o de 'node_modules/pdfjs-dist/build/pdf.worker.mjs' para 'public/pdf.worker.mjs'
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.mjs`
 
 interface DocumentUploaderProps {
-  onTextSubmit: (text: string) => void;
+  onTextSubmit: (text: string) => void
 }
 
 export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
-  const [text, setText] = useState("");
-  const [dragActive, setDragActive] = useState(false);
+  const [text, setText] = useState('')
+  const [dragActive, setDragActive] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleFileUpload = async (file: File) => {
-    if (file.type === "application/pdf" || 
-        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        file.type === "text/plain") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setText(content);
-        toast.success("Arquivo carregado com sucesso!");
-      };
-      reader.readAsText(file);
+    setIsLoading(true)
+    toast.info('Processando o arquivo...')
+
+    const reader = new FileReader()
+
+    if (file.type === 'text/plain') {
+      reader.onload = e => {
+        const content = e.target?.result as string
+        setText(content)
+        toast.success('Arquivo de texto carregado com sucesso!')
+        setIsLoading(false)
+      }
+      reader.readAsText(file)
+    } else if (
+      file.type ===
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ) {
+      // DOCX
+      reader.onload = async e => {
+        const arrayBuffer = e.target?.result as ArrayBuffer
+        try {
+          const result = await mammoth.extractRawText({ arrayBuffer })
+          setText(result.value)
+          toast.success('Documento DOCX carregado com sucesso!')
+        } catch (error) {
+          console.error('Erro ao processar DOCX:', error)
+          toast.error('Não foi possível ler o arquivo DOCX.')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    } else if (file.type === 'application/pdf') {
+      // PDF
+      reader.onload = async e => {
+        const arrayBuffer = e.target?.result as ArrayBuffer
+        try {
+          const loadingTask = pdfjs.getDocument({ data: arrayBuffer })
+          const pdf = await loadingTask.promise
+          let fullText = ''
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i)
+            const textContent = await page.getTextContent()
+            fullText +=
+              textContent.items.map(item => (item as any).str).join(' ') + '\n'
+          }
+          setText(fullText)
+          toast.success('Documento PDF carregado com sucesso!')
+        } catch (error) {
+          console.error('Erro ao processar PDF:', error)
+          toast.error('Não foi possível ler o arquivo PDF.')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      reader.readAsArrayBuffer(file)
     } else {
-      toast.error("Formato de arquivo não suportado. Use PDF, DOCX ou TXT.");
+      toast.error('Formato de arquivo não suportado. Use PDF, DOCX ou TXT.')
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files[0]);
+      handleFileUpload(e.dataTransfer.files[0])
     }
-  };
+  }
 
   const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
     }
-  };
+  }
 
   const handleSubmit = () => {
     if (text.trim()) {
-      onTextSubmit(text);
-      toast.success("Documento pronto para formatação!");
+      onTextSubmit(text)
+      toast.success('Documento pronto para formatação!')
     } else {
-      toast.error("Por favor, insira ou carregue um texto.");
+      toast.error('Por favor, insira ou carregue um texto.')
     }
-  };
+  }
 
   return (
     <Card className="p-8 shadow-elegant backdrop-blur-sm bg-card/95">
@@ -64,9 +121,9 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
             dragActive
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50"
-          }`}
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/50'
+          } ${isLoading ? 'cursor-wait' : ''}`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
@@ -77,20 +134,28 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
             id="file-upload"
             className="hidden"
             accept=".pdf,.docx,.txt"
-            onChange={(e) => {
+            disabled={isLoading}
+            onChange={e => {
               if (e.target.files && e.target.files[0]) {
-                handleFileUpload(e.target.files[0]);
+                handleFileUpload(e.target.files[0])
               }
             }}
           />
-          <label htmlFor="file-upload" className="cursor-pointer">
+          <label
+            htmlFor="file-upload"
+            className={isLoading ? 'cursor-wait' : 'cursor-pointer'}
+          >
             <div className="flex flex-col items-center gap-3">
               <div className="p-4 bg-primary/10 rounded-full">
-                <Upload className="w-8 h-8 text-primary" />
+                {isLoading ? (
+                  <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+                ) : (
+                  <Upload className="w-8 h-8 text-primary" />
+                )}
               </div>
               <div>
                 <p className="text-lg font-semibold text-foreground">
-                  Arraste seu documento aqui
+                  {isLoading ? 'Processando...' : 'Arraste seu documento aqui'}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   ou clique para selecionar (PDF, DOCX, TXT)
@@ -115,8 +180,9 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
           <Textarea
             placeholder="Cole ou digite seu texto aqui..."
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={e => setText(e.target.value)}
             className="min-h-[300px] resize-none text-base"
+            disabled={isLoading}
           />
         </div>
 
@@ -124,11 +190,12 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
           onClick={handleSubmit}
           className="w-full bg-gradient-hero hover:opacity-90 transition-opacity"
           size="lg"
+          disabled={isLoading || !text.trim()}
         >
           <FileText className="mr-2 h-5 w-5" />
           Formatar Documento
         </Button>
       </div>
     </Card>
-  );
-};
+  )
+}

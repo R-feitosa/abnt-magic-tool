@@ -31,7 +31,7 @@ const Index = () => {
               <img 
                 src={logo} 
                 alt="Feitosa Group" 
-                className="h-16 w-auto"
+                className="h-20 min-w-20"
               />
               <div className="text-right">
                 <h1 className="text-2xl font-bold text-primary">
