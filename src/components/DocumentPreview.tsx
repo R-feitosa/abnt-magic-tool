@@ -19,47 +19,48 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
       const paragraphs = content.split('\n').filter(p => p.trim())
 
       const docParagraphs = paragraphs.map(para => {
-        // Lógica para identificar títulos (linhas curtas, todas em maiúsculas ou começando com número)
+        // Identifica títulos: linhas curtas em maiúsculas ou que começam com número
         const isTitle =
           (para.length < 60 && para.toUpperCase() === para) ||
           /^\d+\.?\s/.test(para)
 
         if (isTitle) {
-          // **NOVO ESTILO PARA TÍTULOS - IGUAL AO SEU MODELO**
-          // Apenas negrito, cor preta e sem ser um "Heading" nativo do Word
+          // Títulos ABNT: Times New Roman 12pt, negrito, sem recuo, alinhamento à esquerda
           return new Paragraph({
             children: [
               new TextRun({
                 text: para,
-                font: 'Arial',
+                font: 'Times New Roman',
                 size: 24, // 12pt
                 bold: true,
-                color: '000000' // Preto
+                color: '000000'
               })
             ],
             alignment: AlignmentType.LEFT,
             spacing: {
-              before: 240, // Espaçamento antes do título
-              after: 120 // Espaçamento depois do título
+              before: 240,
+              after: 120,
+              line: 360 // 1,5 entrelinhas
             }
           })
         }
 
-        // **NOVO ESTILO PARA PARÁGRAFOS - IGUAL AO SEU MODELO**
+        // Parágrafos ABNT: Times New Roman 12pt, justificado, 1,5 entrelinhas, recuo 1,25cm
         return new Paragraph({
           children: [
             new TextRun({
               text: para,
-              font: 'Arial',
-              size: 24 // 12pt
+              font: 'Times New Roman',
+              size: 24, // 12pt
+              color: '000000'
             })
           ],
           alignment: AlignmentType.JUSTIFIED,
           spacing: {
-            line: 360 // Espaçamento 1,5
+            line: 360 // 1,5 entrelinhas
           },
           indent: {
-            firstLine: 708.66 // Recuo de 1,25cm
+            firstLine: 708 // 1,25cm exato
           }
         })
       })
@@ -69,8 +70,16 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
           default: {
             document: {
               run: {
-                font: 'Arial',
-                color: '000000' // Garante a cor preta como padrão
+                font: 'Times New Roman',
+                size: 24,
+                color: '000000'
+              },
+              paragraph: {
+                spacing: {
+                  line: 360,
+                  before: 0,
+                  after: 0
+                }
               }
             }
           }
@@ -80,11 +89,10 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
             properties: {
               page: {
                 margin: {
-                  // **MARGENS DO MODELO ABNT**
-                  top: 1701, // 3cm
-                  right: 1134, // 2cm
+                  top: 1701,    // 3cm
+                  right: 1134,  // 2cm
                   bottom: 1134, // 2cm
-                  left: 1701 // 3cm
+                  left: 1701    // 3cm
                 }
               }
             },
@@ -121,48 +129,73 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
         </div>
 
         <div className="bg-white p-12 rounded-lg shadow-inner min-h-[600px] border border-border">
-          <div className="max-w-[21cm] mx-auto space-y-4 font-serif text-foreground">
-            {formattedParagraphs.map((para, index) => {
-              const isTitle =
-                (para.length < 60 && para.toUpperCase() === para) ||
-                /^\d+\.?\s/.test(para)
+          <div 
+            className="mx-auto bg-white"
+            style={{
+              width: '21cm',
+              paddingTop: '3cm',
+              paddingRight: '2cm',
+              paddingBottom: '2cm',
+              paddingLeft: '3cm',
+            }}
+          >
+            <div className="space-y-0">
+              {formattedParagraphs.map((para, index) => {
+                const isTitle =
+                  (para.length < 60 && para.toUpperCase() === para) ||
+                  /^\d+\.?\s/.test(para)
 
-              if (isTitle) {
+                if (isTitle) {
+                  return (
+                    <h3
+                      key={index}
+                      className="font-bold text-black"
+                      style={{ 
+                        fontFamily: 'Times New Roman, serif',
+                        fontSize: '12pt',
+                        lineHeight: '1.5',
+                        marginTop: index === 0 ? '0' : '12pt',
+                        marginBottom: '6pt',
+                        textAlign: 'left'
+                      }}
+                    >
+                      {para}
+                    </h3>
+                  )
+                }
+
                 return (
-                  <h3
+                  <p
                     key={index}
-                    className="text-base font-bold uppercase mt-6 mb-3"
-                    style={{ fontFamily: 'Arial' }}
+                    className="text-black"
+                    style={{ 
+                      fontFamily: 'Times New Roman, serif',
+                      fontSize: '12pt',
+                      lineHeight: '1.5',
+                      textAlign: 'justify',
+                      textIndent: '1.25cm',
+                      margin: '0'
+                    }}
                   >
                     {para}
-                  </h3>
+                  </p>
                 )
-              }
-
-              return (
-                <p
-                  key={index}
-                  className="text-justify leading-relaxed indent-8"
-                  style={{ fontSize: '12pt', fontFamily: 'Arial' }}
-                >
-                  {para}
-                </p>
-              )
-            })}
+              })}
+            </div>
           </div>
         </div>
 
         <div className="bg-muted p-4 rounded-lg">
           <h3 className="font-semibold text-sm mb-2">
-            Padrão de formatação aplicado (baseado no seu modelo):
+            Formatação ABNT aplicada:
           </h3>
           <ul className="text-xs text-muted-foreground space-y-1">
-            <li>• Margens: 3cm (superior/esquerda), 2cm (inferior/direita)</li>
-            <li>• Fonte: Arial 12pt</li>
+            <li>• Margens: 3cm (superior e esquerda), 2cm (inferior e direita)</li>
+            <li>• Fonte: Times New Roman 12pt</li>
             <li>• Espaçamento entre linhas: 1,5</li>
-            <li>• Recuo de primeira linha: 1,25cm</li>
-            <li>• Alinhamento: Justificado</li>
-            <li>• Títulos: Em negrito e cor preta</li>
+            <li>• Recuo de primeira linha: 1,25cm (apenas em parágrafos)</li>
+            <li>• Alinhamento: Justificado (parágrafos) e Esquerda (títulos)</li>
+            <li>• Títulos: Negrito, sem recuo</li>
           </ul>
         </div>
       </div>
