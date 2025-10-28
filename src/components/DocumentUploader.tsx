@@ -1,10 +1,17 @@
 import { useState } from 'react'
-import { Upload, FileText } from 'lucide-react'
+import { Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
 import mammoth from 'mammoth'
+import { cleanText } from '@/lib/textCleaner'
+import { analyzeDocument, DocumentStructure } from '@/lib/documentStructure'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 
 // --- INÍCIO DA MUDANÇA ---
 // Importa o pdf.js e o worker de uma forma que o Vite entende
@@ -16,13 +23,41 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
 // --- FIM DA MUDANÇA ---
 
 interface DocumentUploaderProps {
-  onTextSubmit: (text: string) => void
+  onTextSubmit: (text: string, structure: DocumentStructure) => void
 }
 
 export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
   const [text, setText] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [cleaningStats, setCleaningStats] = useState<any>(null)
+  const [documentStructure, setDocumentStructure] = useState<DocumentStructure | null>(null)
+  const [showAnalysis, setShowAnalysis] = useState(false)
+
+  const processText = (rawText: string) => {
+    // Limpar o texto
+    const { text: cleanedText, stats } = cleanText(rawText)
+    setText(cleanedText)
+    setCleaningStats(stats)
+
+    // Analisar estrutura do documento
+    const structure = analyzeDocument(cleanedText)
+    setDocumentStructure(structure)
+
+    // Mostrar resultados
+    if (stats.totalChanges > 0) {
+      toast.success(
+        `Documento analisado: ${stats.totalChanges} problema${stats.totalChanges > 1 ? 's' : ''} corrigido${stats.totalChanges > 1 ? 's' : ''}!`
+      )
+    }
+
+    if (structure.stats.titles > 0 || structure.stats.subtitles > 0) {
+      toast.info(
+        `Estrutura detectada: ${structure.stats.titles} título${structure.stats.titles !== 1 ? 's' : ''}, ${structure.stats.subtitles} subtítulo${structure.stats.subtitles !== 1 ? 's' : ''}, ${structure.stats.paragraphs} parágrafo${structure.stats.paragraphs !== 1 ? 's' : ''}`
+      )
+      setShowAnalysis(true)
+    }
+  }
 
   const handleFileUpload = async (file: File) => {
     setIsLoading(true)
@@ -33,7 +68,7 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
     if (file.type === 'text/plain') {
       reader.onload = e => {
         const content = e.target?.result as string
-        setText(content)
+        processText(content)
         toast.success('Arquivo de texto carregado com sucesso!')
         setIsLoading(false)
       }
@@ -47,7 +82,7 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
         const arrayBuffer = e.target?.result as ArrayBuffer
         try {
           const result = await mammoth.extractRawText({ arrayBuffer })
-          setText(result.value)
+          processText(result.value)
           toast.success('Documento DOCX carregado com sucesso!')
         } catch (error) {
           console.error('Erro ao processar DOCX:', error)
@@ -71,7 +106,7 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
             fullText +=
               textContent.items.map(item => (item as any).str).join(' ') + '\n'
           }
-          setText(fullText)
+          processText(fullText)
           toast.success('Documento PDF carregado com sucesso!')
         } catch (error) {
           console.error('Erro ao processar PDF:', error)
@@ -109,7 +144,13 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
 
   const handleSubmit = () => {
     if (text.trim()) {
-      onTextSubmit(text)
+      // Se não tiver estrutura ainda, processar o texto
+      let structure = documentStructure
+      if (!structure) {
+        const processed = cleanText(text)
+        structure = analyzeDocument(processed.text)
+      }
+      onTextSubmit(text, structure)
       toast.success('Documento pronto para formatação!')
     } else {
       toast.error('Por favor, insira ou carregue um texto.')
@@ -177,7 +218,7 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
           </div>
         </div>
 
-        <div>
+        <div className="space-y-4">
           <Textarea
             placeholder="Cole ou digite seu texto aqui..."
             value={text}
@@ -185,6 +226,59 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
             className="min-h-[300px] resize-none text-base"
             disabled={isLoading}
           />
+
+          {/* Análise do Documento */}
+          {(cleaningStats || documentStructure) && (
+            <Collapsible open={showAnalysis} onOpenChange={setShowAnalysis}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <AlertCircle className="w-4 h-4" />
+                <span>
+                  {showAnalysis ? 'Ocultar' : 'Ver'} análise do documento
+                </span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3 space-y-3">
+                {cleaningStats && cleaningStats.totalChanges > 0 && (
+                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                      Correções Aplicadas
+                    </h4>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      {cleaningStats.multipleSpacesRemoved > 0 && (
+                        <li>✓ {cleaningStats.multipleSpacesRemoved} espaços múltiplos removidos</li>
+                      )}
+                      {cleaningStats.punctuationFixed > 0 && (
+                        <li>✓ {cleaningStats.punctuationFixed} espaços antes de pontuação corrigidos</li>
+                      )}
+                      {cleaningStats.excessiveSpacingRemoved > 0 && (
+                        <li>✓ {cleaningStats.excessiveSpacingRemoved} espaçamentos excessivos corrigidos</li>
+                      )}
+                      {cleaningStats.lineBreaksNormalized > 0 && (
+                        <li>✓ {cleaningStats.lineBreaksNormalized} quebras de linha normalizadas</li>
+                      )}
+                      {cleaningStats.tabsConverted > 0 && (
+                        <li>✓ {cleaningStats.tabsConverted} tabs convertidos para espaços</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                {documentStructure && (
+                  <div className="p-4 bg-secondary/20 rounded-lg border border-border">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-secondary-foreground" />
+                      Estrutura Detectada
+                    </h4>
+                    <div className="text-xs space-y-1 text-muted-foreground">
+                      <p>📄 {documentStructure.stats.titles} título(s) principal(is)</p>
+                      <p>📑 {documentStructure.stats.subtitles} subtítulo(s)</p>
+                      <p>📝 {documentStructure.stats.paragraphs} parágrafo(s)</p>
+                    </div>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
 
         <Button

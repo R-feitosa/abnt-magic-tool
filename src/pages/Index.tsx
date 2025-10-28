@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentPreview } from "@/components/DocumentPreview";
+import { DocumentStructure } from "@/lib/documentStructure";
 import logo from "@/assets/logo.png";
 import fundo from "@/assets/fundo3.png";
 
 const Index = () => {
   const [documentContent, setDocumentContent] = useState<string | null>(null);
+  const [documentStructure, setDocumentStructure] = useState<DocumentStructure | null>(null);
+
+  const handleTextSubmit = (text: string, structure: DocumentStructure) => {
+    setDocumentContent(text);
+    setDocumentStructure(structure);
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -58,7 +65,7 @@ const Index = () => {
                     Carregue ou cole seu texto e receba um documento formatado nas normas ABNT
                   </p>
                 </div>
-                <DocumentUploader onTextSubmit={setDocumentContent} />
+                <DocumentUploader onTextSubmit={handleTextSubmit} />
               </div>
             ) : (
               <div className="space-y-8">
@@ -67,13 +74,18 @@ const Index = () => {
                     Documento Formatado
                   </h2>
                   <button
-                    onClick={() => setDocumentContent(null)}
+                    onClick={() => {
+                      setDocumentContent(null);
+                      setDocumentStructure(null);
+                    }}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
                   >
                     ← Voltar ao início
                   </button>
                 </div>
-                <DocumentPreview content={documentContent} />
+                {documentStructure && (
+                  <DocumentPreview content={documentContent} structure={documentStructure} />
+                )}
               </div>
             )}
           </div>

@@ -4,32 +4,42 @@ import { Download } from 'lucide-react'
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx'
 import { saveAs } from 'file-saver'
 import { toast } from 'sonner'
+import { DocumentStructure } from '@/lib/documentStructure'
 
 interface DocumentPreviewProps {
   content: string
+  structure: DocumentStructure
 }
 
-export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
-  const formatTextForPreview = (text: string) => {
-    return text.split('\n').filter(p => p.trim())
-  }
-
+export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) => {
   const generateDocx = async () => {
     try {
-      const paragraphs = content.split('\n').filter(p => p.trim())
-
-      const docParagraphs = paragraphs.map(para => {
-        // Identifica títulos: linhas curtas em maiúsculas ou que começam com número
-        const isTitle =
-          (para.length < 60 && para.toUpperCase() === para) ||
-          /^\d+\.?\s/.test(para)
-
-        if (isTitle) {
-          // Títulos ABNT: Times New Roman 12pt, negrito, sem recuo, alinhamento à esquerda
+      const docParagraphs = structure.elements.map(element => {
+        if (element.type === 'title') {
+          // Títulos principais ABNT: Times New Roman 12pt, negrito, sem recuo, maiúsculas
           return new Paragraph({
             children: [
               new TextRun({
-                text: para,
+                text: element.content.toUpperCase(),
+                font: 'Times New Roman',
+                size: 24, // 12pt
+                bold: true,
+                color: '000000'
+              })
+            ],
+            alignment: AlignmentType.LEFT,
+            spacing: {
+              before: 360, // Espaço antes do título
+              after: 240,  // Espaço depois do título
+              line: 360    // 1,5 entrelinhas
+            }
+          })
+        } else if (element.type === 'subtitle') {
+          // Subtítulos ABNT: Times New Roman 12pt, negrito, sem recuo
+          return new Paragraph({
+            children: [
+              new TextRun({
+                text: element.content,
                 font: 'Times New Roman',
                 size: 24, // 12pt
                 bold: true,
@@ -49,7 +59,7 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
         return new Paragraph({
           children: [
             new TextRun({
-              text: para,
+              text: element.content,
               font: 'Times New Roman',
               size: 24, // 12pt
               color: '000000'
@@ -57,7 +67,8 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
           ],
           alignment: AlignmentType.JUSTIFIED,
           spacing: {
-            line: 360 // 1,5 entrelinhas
+            line: 360, // 1,5 entrelinhas
+            after: 0
           },
           indent: {
             firstLine: 708 // 1,25cm exato
@@ -110,8 +121,6 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
     }
   }
 
-  const formattedParagraphs = formatTextForPreview(content)
-
   return (
     <Card className="p-8 shadow-elegant backdrop-blur-sm bg-card/95">
       <div className="space-y-6">
@@ -140,12 +149,25 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
             }}
           >
             <div className="space-y-0">
-              {formattedParagraphs.map((para, index) => {
-                const isTitle =
-                  (para.length < 60 && para.toUpperCase() === para) ||
-                  /^\d+\.?\s/.test(para)
-
-                if (isTitle) {
+              {structure.elements.map((element, index) => {
+                if (element.type === 'title') {
+                  return (
+                    <h2
+                      key={index}
+                      className="font-bold text-black uppercase"
+                      style={{ 
+                        fontFamily: 'Times New Roman, serif',
+                        fontSize: '12pt',
+                        lineHeight: '1.5',
+                        marginTop: index === 0 ? '0' : '18pt',
+                        marginBottom: '12pt',
+                        textAlign: 'left'
+                      }}
+                    >
+                      {element.content}
+                    </h2>
+                  )
+                } else if (element.type === 'subtitle') {
                   return (
                     <h3
                       key={index}
@@ -154,12 +176,12 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
                         fontFamily: 'Times New Roman, serif',
                         fontSize: '12pt',
                         lineHeight: '1.5',
-                        marginTop: index === 0 ? '0' : '12pt',
+                        marginTop: '12pt',
                         marginBottom: '6pt',
                         textAlign: 'left'
                       }}
                     >
-                      {para}
+                      {element.content}
                     </h3>
                   )
                 }
@@ -177,7 +199,7 @@ export const DocumentPreview = ({ content }: DocumentPreviewProps) => {
                       margin: '0'
                     }}
                   >
-                    {para}
+                    {element.content}
                   </p>
                 )
               })}
