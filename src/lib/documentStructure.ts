@@ -3,12 +3,34 @@
  * Identifica títulos, subtítulos e parágrafos automaticamente
  */
 
-export type ElementType = 'title' | 'subtitle' | 'paragraph'
+export type ElementType = 
+  | 'title' 
+  | 'subtitle' 
+  | 'paragraph'
+  | 'table'
+  | 'image'
+  | 'quote'
+  | 'list'
+  | 'code'
+  | 'page-break'
+  | 'unknown'
 
 export interface DocumentElement {
   type: ElementType
-  content: string
-  level?: number // 1 para título principal, 2 para subtítulo, etc.
+  content: string | any
+  level?: number
+  originalHtml?: string
+  preserveAsIs?: boolean
+  needsFormatting?: boolean
+  metadata?: {
+    tableData?: any
+    imageUrl?: string
+    imageData?: string
+    listType?: 'ordered' | 'unordered'
+    isQuote?: boolean
+    rows?: number
+    columns?: number
+  }
 }
 
 export interface DocumentStructure {

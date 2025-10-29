@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Upload, FileText, CheckCircle2, AlertCircle, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import mammoth from 'mammoth'
 import { cleanText } from '@/lib/textCleaner'
 import { analyzeDocument, DocumentStructure } from '@/lib/documentStructure'
+import { parseHtmlToStructure } from '@/lib/htmlParser'
 import {
   Collapsible,
   CollapsibleContent,
@@ -35,14 +36,17 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
   const [showAnalysis, setShowAnalysis] = useState(false)
 
   const processText = (rawText: string) => {
-    // Limpar o texto
+    // Se já temos estrutura do HTML (de DOCX), usar ela
+    if (!documentStructure) {
+      // Para texto simples ou PDF, analisar normalmente
+      const structure = analyzeDocument(rawText)
+      setDocumentStructure(structure)
+    }
+
+    // Limpar apenas o texto que precisa formatação
     const { text: cleanedText, stats } = cleanText(rawText)
     setText(cleanedText)
     setCleaningStats(stats)
-
-    // Analisar estrutura do documento
-    const structure = analyzeDocument(cleanedText)
-    setDocumentStructure(structure)
 
     // Mostrar resultados
     if (stats.totalChanges > 0) {
@@ -51,6 +55,7 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
       )
     }
 
+    const structure = documentStructure || analyzeDocument(cleanedText)
     if (structure.stats.titles > 0 || structure.stats.subtitles > 0) {
       toast.info(
         `Estrutura detectada: ${structure.stats.titles} título${structure.stats.titles !== 1 ? 's' : ''}, ${structure.stats.subtitles} subtítulo${structure.stats.subtitles !== 1 ? 's' : ''}, ${structure.stats.paragraphs} parágrafo${structure.stats.paragraphs !== 1 ? 's' : ''}`
@@ -81,8 +86,28 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
       reader.onload = async e => {
         const arrayBuffer = e.target?.result as ArrayBuffer
         try {
-          const result = await mammoth.extractRawText({ arrayBuffer })
-          processText(result.value)
+          // Extrair HTML estruturado ao invés de texto simples
+          const result = await mammoth.convertToHtml({ arrayBuffer })
+          
+          // Parsear HTML para estrutura preservando elementos
+          const htmlStructure = parseHtmlToStructure(result.value)
+          setDocumentStructure(htmlStructure)
+          
+          // Extrair texto limpo apenas dos elementos que precisam formatação
+          const rawText = htmlStructure.elements
+            .filter(el => el.needsFormatting)
+            .map(el => el.content)
+            .join('\n\n')
+          
+          // Se houver elementos preservados, informar ao usuário
+          const preservedCount = htmlStructure.elements.filter(el => el.preserveAsIs).length
+          if (preservedCount > 0) {
+            toast.success(`${preservedCount} elementos preservados (tabelas, imagens, listas)`, {
+              description: 'Estes elementos serão mantidos intactos no documento final'
+            })
+          }
+          
+          processText(rawText)
           toast.success('Documento DOCX carregado com sucesso!')
         } catch (error) {
           console.error('Erro ao processar DOCX:', error)
@@ -273,6 +298,30 @@ export const DocumentUploader = ({ onTextSubmit }: DocumentUploaderProps) => {
                       <p>📄 {documentStructure.stats.titles} título(s) principal(is)</p>
                       <p>📑 {documentStructure.stats.subtitles} subtítulo(s)</p>
                       <p>📝 {documentStructure.stats.paragraphs} parágrafo(s)</p>
+                      
+                      {documentStructure.elements.filter(el => el.type === 'table').length > 0 && (
+                        <p className="text-green-600 font-medium">
+                          🔒 {documentStructure.elements.filter(el => el.type === 'table').length} tabela(s) preservada(s)
+                        </p>
+                      )}
+                      
+                      {documentStructure.elements.filter(el => el.type === 'image').length > 0 && (
+                        <p className="text-green-600 font-medium">
+                          🔒 {documentStructure.elements.filter(el => el.type === 'image').length} imagem(ns) preservada(s)
+                        </p>
+                      )}
+                      
+                      {documentStructure.elements.filter(el => el.type === 'list').length > 0 && (
+                        <p className="text-green-600 font-medium">
+                          🔒 {documentStructure.elements.filter(el => el.type === 'list').length} lista(s) preservada(s)
+                        </p>
+                      )}
+                      
+                      {documentStructure.elements.filter(el => el.type === 'quote').length > 0 && (
+                        <p className="text-green-600 font-medium">
+                          🔒 {documentStructure.elements.filter(el => el.type === 'quote').length} citação(ões) preservada(s)
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
