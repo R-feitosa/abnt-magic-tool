@@ -16,7 +16,7 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
     try {
       const children: any[] = []
 
-      structure.elements.forEach((element) => {
+      structure.elements.forEach((element, index) => {
         // Elementos preservados - tabelas
         if (element.type === 'table' && element.preserveAsIs && element.metadata?.tableData) {
           const tableRows = element.metadata.tableData.map((rowData: string[]) => {
@@ -133,13 +133,13 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
               ],
               alignment: AlignmentType.LEFT,
               spacing: {
-                before: 360,
+                before: index === 0 ? 0 : 360,
                 after: 240,
                 line: 360
               }
             })
           )
-        } 
+        }
         // Subtítulos - formatação ABNT
         else if (element.type === 'subtitle') {
           children.push(

@@ -180,7 +180,11 @@ const isTitlePattern = (line: string): boolean => {
   const trimmed = line.trim()
   
   if (!trimmed || trimmed.length < 2) return false
-  if (trimmed.length > 150) return false
+  if (trimmed.length > 200) return false
+  
+  // Detectar títulos numerados: 1, 1.1, 1.1.1, 2.1, 2.2, etc.
+  const hasNumbering = /^(\d+\.)+\d*\s+/.test(trimmed) || /^\d+\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/.test(trimmed)
+  if (hasNumbering) return true
   
   const isAllCaps = trimmed === trimmed.toUpperCase() && /[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/.test(trimmed)
   
@@ -195,10 +199,9 @@ const isTitlePattern = (line: string): boolean => {
     trimmed.toUpperCase().includes(keyword)
   )
   
-  const hasNumbering = /^(\d+\.)+\s+/.test(trimmed) || /^[a-z]\)\s+/.test(trimmed)
   const isShortWithoutPeriod = trimmed.length < 80 && !trimmed.endsWith('.')
   
-  return isAllCaps || hasKeyword || hasNumbering || (isShortWithoutPeriod && hasKeyword)
+  return isAllCaps || hasKeyword || (isShortWithoutPeriod && hasKeyword)
 }
 
 /**
@@ -207,10 +210,17 @@ const isTitlePattern = (line: string): boolean => {
 const getTitleLevel = (line: string): number => {
   const trimmed = line.trim()
   
+  // Detectar numeração: 1 = nível 1, 1.1 = nível 2, 1.1.1 = nível 3
   const numberingMatch = trimmed.match(/^(\d+\.)+/)
   if (numberingMatch) {
     const dots = (numberingMatch[0].match(/\./g) || []).length
-    return dots
+    return Math.min(dots + 1, 3) // Máximo nível 3
+  }
+  
+  // Título simples com número: "1 INTRODUÇÃO" = nível 1
+  const simpleNumberMatch = trimmed.match(/^\d+\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/)
+  if (simpleNumberMatch) {
+    return 1
   }
   
   const mainKeywords = ['INTRODUÇÃO', 'CONCLUSÃO', 'REFERÊNCIAS', 'DESENVOLVIMENTO', 'RESUMO', 'ABSTRACT']
