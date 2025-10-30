@@ -160,16 +160,26 @@ const extractTableData = (table: Element): any[][] => {
   const rows: any[][] = []
   const trs = table.querySelectorAll('tr')
   
-  trs.forEach(tr => {
+  console.log('📊 Extraindo tabela:', {
+    totalLinhas: trs.length,
+    html: table.outerHTML.substring(0, 200)
+  })
+  
+  trs.forEach((tr, rowIndex) => {
     const cells: string[] = []
-    tr.querySelectorAll('td, th').forEach(cell => {
+    const tdElements = tr.querySelectorAll('td, th')
+    
+    tdElements.forEach(cell => {
       cells.push(cell.textContent?.trim() || '')
     })
+    
     if (cells.length > 0) {
       rows.push(cells)
+      console.log(`  Linha ${rowIndex}: ${cells.length} células`, cells)
     }
   })
   
+  console.log('✅ Tabela extraída:', rows.length, 'linhas')
   return rows
 }
 
@@ -182,9 +192,12 @@ const isTitlePattern = (line: string): boolean => {
   if (!trimmed || trimmed.length < 2) return false
   if (trimmed.length > 200) return false
   
-  // Detectar títulos numerados: 1, 1.1, 1.1.1, 2.1, 2.2, etc.
-  const hasNumbering = /^(\d+\.)+\d*\s+/.test(trimmed) || /^\d+\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/.test(trimmed)
-  if (hasNumbering) return true
+  // Detectar títulos numerados: 1, 1.1, 2.1, 2.2, 2.2.1, etc.
+  const hasNumbering = /^\d+(\.\d+)*\.?\s+/.test(trimmed)
+  if (hasNumbering) {
+    console.log('✅ Título numerado detectado:', trimmed.substring(0, 80))
+    return true
+  }
   
   const isAllCaps = trimmed === trimmed.toUpperCase() && /[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/.test(trimmed)
   
@@ -210,17 +223,14 @@ const isTitlePattern = (line: string): boolean => {
 const getTitleLevel = (line: string): number => {
   const trimmed = line.trim()
   
-  // Detectar numeração: 1 = nível 1, 1.1 = nível 2, 1.1.1 = nível 3
-  const numberingMatch = trimmed.match(/^(\d+\.)+/)
+  // Detectar numeração: 1 = nível 1, 1.1 = nível 2, 1.1.1 = nível 3, 2.1 = nível 2
+  const numberingMatch = trimmed.match(/^(\d+(\.\d+)*)\.?\s+/)
   if (numberingMatch) {
-    const dots = (numberingMatch[0].match(/\./g) || []).length
-    return Math.min(dots + 1, 3) // Máximo nível 3
-  }
-  
-  // Título simples com número: "1 INTRODUÇÃO" = nível 1
-  const simpleNumberMatch = trimmed.match(/^\d+\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/)
-  if (simpleNumberMatch) {
-    return 1
+    const numbering = numberingMatch[1]
+    const dots = (numbering.match(/\./g) || []).length
+    const level = dots + 1
+    console.log(`📊 Nível detectado para "${trimmed.substring(0, 50)}": nível ${level} (${dots} pontos)`)
+    return Math.min(level, 3) // Máximo nível 3
   }
   
   const mainKeywords = ['INTRODUÇÃO', 'CONCLUSÃO', 'REFERÊNCIAS', 'DESENVOLVIMENTO', 'RESUMO', 'ABSTRACT']

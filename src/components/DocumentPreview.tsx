@@ -14,6 +14,27 @@ interface DocumentPreviewProps {
 export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) => {
   const generateDocx = async () => {
     try {
+      console.log('📄 Gerando DOCX com estrutura:', {
+        totalElementos: structure.elements.length,
+        tabelas: structure.elements.filter(e => e.type === 'table').length,
+        titulos: structure.elements.filter(e => e.type === 'title').length,
+        subtitulos: structure.elements.filter(e => e.type === 'subtitle').length,
+        paragrafos: structure.elements.filter(e => e.type === 'paragraph').length
+      })
+      
+      // Validar tabelas especificamente
+      structure.elements
+        .filter(e => e.type === 'table')
+        .forEach((table, i) => {
+          console.log(`📊 Tabela ${i}:`, {
+            preserveAsIs: table.preserveAsIs,
+            hasMetadata: !!table.metadata,
+            hasTableData: !!table.metadata?.tableData,
+            rows: table.metadata?.tableData?.length || 0,
+            firstRow: table.metadata?.tableData?.[0]
+          })
+        })
+      
       const children: any[] = []
 
       structure.elements.forEach((element, index) => {
@@ -120,6 +141,13 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
 
         // Títulos principais - formatação ABNT
         if (element.type === 'title') {
+          console.log('🔥 Criando título:', {
+            content: element.content,
+            index,
+            isFirst: index === 0,
+            isBold: true
+          })
+          
           children.push(
             new Paragraph({
               children: [
