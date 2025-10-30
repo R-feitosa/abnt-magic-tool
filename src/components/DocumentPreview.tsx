@@ -205,7 +205,7 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
               alignment: AlignmentType.JUSTIFIED,
               spacing: {
                 line: 360,
-                after: 0
+                after: 240 // Espaço de 1 linha após cada parágrafo
               },
               indent: {
                 firstLine: 708

@@ -24,17 +24,38 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
       const element = node as Element
       const tagName = element.tagName.toLowerCase()
 
-      // Tabelas - preservar intactas
+      // Tabelas - preservar intactas (ignorar tabelas aninhadas)
       if (tagName === 'table') {
+        // Ignorar tabelas que estão dentro de células (tabelas aninhadas)
+        if (element.closest('td')) {
+          console.log('⚠️ Tabela aninhada ignorada')
+          return
+        }
+        
+        const tableData = extractTableData(element)
+        
+        // Validar se tabela foi extraída corretamente
+        const isValidTable = tableData.length > 0 && 
+                            tableData[0].length > 1 &&
+                            tableData[0][0].length < 500
+        
+        if (!isValidTable) {
+          console.log('⚠️ Tabela com formato inválido, tentando extrair texto:', {
+            rows: tableData.length,
+            firstCellLength: tableData[0]?.[0]?.length || 0
+          })
+        }
+        
         elements.push({
           type: 'table',
           content: element.outerHTML,
           originalHtml: element.outerHTML,
           preserveAsIs: true,
           metadata: {
-            tableData: extractTableData(element),
+            tableData,
             rows: element.querySelectorAll('tr').length,
-            columns: element.querySelector('tr')?.querySelectorAll('td, th').length || 0
+            columns: element.querySelector('tr')?.querySelectorAll('td, th').length || 0,
+            isValid: isValidTable
           }
         })
         return
@@ -158,19 +179,42 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
  */
 const extractTableData = (table: Element): any[][] => {
   const rows: any[][] = []
-  const trs = table.querySelectorAll('tr')
+  
+  // Extrair apenas TR diretos (não de tabelas aninhadas)
+  const trs = Array.from(table.children).filter(child => 
+    child.tagName === 'TBODY' || child.tagName === 'THEAD'
+  ).flatMap(section => Array.from(section.children))
+  
+  // Se não encontrou TBODY/THEAD, pegar TRs diretos
+  const directTrs = trs.length > 0 ? trs : Array.from(table.querySelectorAll(':scope > tr'))
   
   console.log('📊 Extraindo tabela:', {
-    totalLinhas: trs.length,
+    totalLinhas: directTrs.length,
     html: table.outerHTML.substring(0, 200)
   })
   
-  trs.forEach((tr, rowIndex) => {
+  directTrs.forEach((tr, rowIndex) => {
+    if (tr.tagName !== 'TR') return
+    
     const cells: string[] = []
-    const tdElements = tr.querySelectorAll('td, th')
+    // Pegar apenas TD/TH diretos, não de tabelas aninhadas
+    const tdElements = Array.from(tr.children).filter(child => 
+      child.tagName === 'TD' || child.tagName === 'TH'
+    )
     
     tdElements.forEach(cell => {
-      cells.push(cell.textContent?.trim() || '')
+      // Se célula contém tabela aninhada, extrair texto sem a tabela
+      const nestedTable = cell.querySelector('table')
+      if (nestedTable) {
+        const textWithoutTable = Array.from(cell.childNodes)
+          .filter(node => node.nodeType === Node.TEXT_NODE || (node.nodeName !== 'TABLE' && !node.contains(nestedTable)))
+          .map(node => node.textContent?.trim() || '')
+          .join(' ')
+          .trim()
+        cells.push(textWithoutTable)
+      } else {
+        cells.push(cell.textContent?.trim() || '')
+      }
     })
     
     if (cells.length > 0) {

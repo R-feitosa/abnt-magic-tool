@@ -30,6 +30,7 @@ export interface DocumentElement {
     isQuote?: boolean
     rows?: number
     columns?: number
+    isValid?: boolean
   }
 }
 
