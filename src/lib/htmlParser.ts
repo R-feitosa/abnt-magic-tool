@@ -24,26 +24,23 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
       const element = node as Element
       const tagName = element.tagName.toLowerCase()
 
-      // Tabelas - preservar intactas (ignorar tabelas aninhadas)
+      // Tabelas - preservar intactas
       if (tagName === 'table') {
-        // Ignorar tabelas que estão dentro de células (tabelas aninhadas)
-        if (element.closest('td')) {
-          console.log('⚠️ Tabela aninhada ignorada')
-          return
-        }
-        
+        // NÃO ignorar tabelas - processar todas
         const tableData = extractTableData(element)
         
-        // Validar se tabela foi extraída corretamente
-        const isValidTable = tableData.length > 0 && 
-                            tableData[0].length > 1 &&
-                            tableData[0][0].length < 500
+        console.log('📊 Tabela detectada:', {
+          rows: tableData.length,
+          cols: tableData[0]?.length || 0,
+          firstCell: tableData[0]?.[0]?.substring(0, 30)
+        })
         
-        if (!isValidTable) {
-          console.log('⚠️ Tabela com formato inválido, tentando extrair texto:', {
-            rows: tableData.length,
-            firstCellLength: tableData[0]?.[0]?.length || 0
-          })
+        // Validar apenas se tem conteúdo
+        const hasContent = tableData.length > 0 && tableData[0].length > 0
+        
+        if (!hasContent) {
+          console.log('⚠️ Tabela vazia, ignorando')
+          return
         }
         
         elements.push({
@@ -53,9 +50,9 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
           preserveAsIs: true,
           metadata: {
             tableData,
-            rows: element.querySelectorAll('tr').length,
-            columns: element.querySelector('tr')?.querySelectorAll('td, th').length || 0,
-            isValid: isValidTable
+            rows: tableData.length,
+            columns: tableData[0]?.length || 0,
+            isValid: true
           }
         })
         return
@@ -284,6 +281,10 @@ const isTitlePattern = (line: string): boolean => {
   const hasKeyword = COMMON_TITLE_KEYWORDS.some(keyword => 
     trimmed.toUpperCase().includes(keyword)
   )
+  
+  // NÃO considerar "Palavras-chave" ou "Keywords" como título
+  const isKeywordLine = /^(palavras-chave|keywords):/i.test(trimmed)
+  if (isKeywordLine) return false
   
   const isShortWithoutPeriod = trimmed.length < 80 && !trimmed.endsWith('.')
   
