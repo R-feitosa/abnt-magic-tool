@@ -410,7 +410,8 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
                       lineHeight: '1.5',
                       textAlign: 'justify',
                       textIndent: '1.25cm',
-                      margin: '0'
+                      margin: '0',
+                      marginBottom: '12pt' // Espaço visual entre parágrafos
                     }}
                   >
                     {element.content}

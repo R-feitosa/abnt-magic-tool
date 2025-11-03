@@ -129,8 +129,22 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
         // Detectar se é título
         const isTitle = tagName.startsWith('h') || isTitlePattern(text)
         
+        console.log('🔍 Analisando elemento:', { 
+          text: text.substring(0, 50), 
+          tagName, 
+          isTitle,
+          isTitlePattern: isTitlePattern(text)
+        })
+        
         if (isTitle) {
           const level = tagName === 'h1' ? 1 : tagName === 'h2' ? 2 : getTitleLevel(text)
+          
+          console.log('✅ Elemento classificado como título:', {
+            text: text.substring(0, 50),
+            level,
+            type: level === 1 ? 'title' : 'subtitle'
+          })
+          
           elements.push({
             type: level === 1 ? 'title' : 'subtitle',
             content: text,
@@ -180,6 +194,15 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
 const extractTableData = (table: Element): any[][] => {
   const rows: any[][] = []
   
+  // NOVO: Verificar se a primeira célula contém uma tabela aninhada
+  const firstCell = table.querySelector('td, th')
+  const nestedTable = firstCell?.querySelector('table')
+  
+  if (nestedTable) {
+    console.log('🔄 Detectada tabela aninhada, extraindo tabela interna recursivamente...')
+    return extractTableData(nestedTable) // Recursão para extrair a tabela real
+  }
+  
   // Extrair apenas TR diretos (não de tabelas aninhadas)
   const trs = Array.from(table.children).filter(child => 
     child.tagName === 'TBODY' || child.tagName === 'THEAD'
@@ -204,10 +227,10 @@ const extractTableData = (table: Element): any[][] => {
     
     tdElements.forEach(cell => {
       // Se célula contém tabela aninhada, extrair texto sem a tabela
-      const nestedTable = cell.querySelector('table')
-      if (nestedTable) {
+      const cellNestedTable = cell.querySelector('table')
+      if (cellNestedTable) {
         const textWithoutTable = Array.from(cell.childNodes)
-          .filter(node => node.nodeType === Node.TEXT_NODE || (node.nodeName !== 'TABLE' && !node.contains(nestedTable)))
+          .filter(node => node.nodeType === Node.TEXT_NODE || (node.nodeName !== 'TABLE' && !node.contains(cellNestedTable)))
           .map(node => node.textContent?.trim() || '')
           .join(' ')
           .trim()
@@ -237,9 +260,15 @@ const isTitlePattern = (line: string): boolean => {
   if (trimmed.length > 200) return false
   
   // Detectar títulos numerados: 1, 1.1, 2.1, 2.2, 2.2.1, etc.
-  const hasNumbering = /^\d+(\.\d+)*\.?\s+/.test(trimmed)
+  const hasMainNumbering = /^\d+\s+/.test(trimmed) // "2 TÍTULO"
+  const hasSubNumbering = /^\d+(\.\d+)+\.?\s+/.test(trimmed) // "2.1 SUBTÍTULO"
+  const hasNumbering = hasMainNumbering || hasSubNumbering
+  
   if (hasNumbering) {
-    console.log('✅ Título numerado detectado:', trimmed.substring(0, 80))
+    console.log('✅ Título numerado detectado:', trimmed.substring(0, 80), {
+      isMain: hasMainNumbering,
+      isSub: hasSubNumbering
+    })
     return true
   }
   
