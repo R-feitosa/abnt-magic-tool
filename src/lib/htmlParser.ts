@@ -263,16 +263,21 @@ const isTitlePattern = (line: string): boolean => {
   if (!trimmed || trimmed.length < 2) return false
   if (trimmed.length > 200) return false
   
-  // Detectar títulos numerados: 1, 1.1, 2.1, 2.2, 2.2.1, etc.
-  const hasMainNumbering = /^\d+\s+/.test(trimmed) // "2 TÍTULO"
-  const hasSubNumbering = /^\d+(\.\d+)+\.?\s+/.test(trimmed) // "2.1 SUBTÍTULO"
-  const hasNumbering = hasMainNumbering || hasSubNumbering
+  // PRIORIDADE 1: Detectar SUBTÍTULOS numerados (com pontos): 2.1, 2.2, 2.1.1, etc.
+  const subNumberingPattern = /^\d+\.\d+(\.\d+)*\.?\s+/
+  const hasSubNumbering = subNumberingPattern.test(trimmed)
   
-  if (hasNumbering) {
-    console.log('✅ Título numerado detectado:', trimmed.substring(0, 80), {
-      isMain: hasMainNumbering,
-      isSub: hasSubNumbering
-    })
+  if (hasSubNumbering) {
+    console.log('✅ SUBTÍTULO NUMERADO detectado:', trimmed.substring(0, 80))
+    return true
+  }
+  
+  // PRIORIDADE 2: Detectar títulos PRINCIPAIS numerados: "1 ", "2 ", "3 " (apenas número + espaço)
+  const mainNumberingPattern = /^\d+\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/
+  const hasMainNumbering = mainNumberingPattern.test(trimmed)
+  
+  if (hasMainNumbering) {
+    console.log('✅ TÍTULO PRINCIPAL NUMERADO detectado:', trimmed.substring(0, 80))
     return true
   }
   
@@ -304,14 +309,26 @@ const isTitlePattern = (line: string): boolean => {
 const getTitleLevel = (line: string): number => {
   const trimmed = line.trim()
   
-  // Detectar numeração: 1 = nível 1, 1.1 = nível 2, 1.1.1 = nível 3, 2.1 = nível 2
-  const numberingMatch = trimmed.match(/^(\d+(\.\d+)*)\.?\s+/)
-  if (numberingMatch) {
-    const numbering = numberingMatch[1]
+  // DETECÇÃO PRECISA DE NÍVEIS POR NUMERAÇÃO:
+  // "2 TÍTULO" = nível 1 (0 pontos)
+  // "2.1 SUBTÍTULO" = nível 2 (1 ponto)
+  // "2.1.1 SUBTÍTULO" = nível 3 (2 pontos)
+  
+  // Padrão para subtítulos: 2.1, 2.2, 2.1.1, etc. (obrigatório pelo menos 1 ponto)
+  const subNumberingMatch = trimmed.match(/^(\d+\.\d+(\.\d+)*)\.?\s+/)
+  if (subNumberingMatch) {
+    const numbering = subNumberingMatch[1]
     const dots = (numbering.match(/\./g) || []).length
-    const level = dots + 1
-    console.log(`📊 Nível detectado para "${trimmed.substring(0, 50)}": nível ${level} (${dots} pontos)`)
+    const level = dots + 1 // 1 ponto = nível 2, 2 pontos = nível 3
+    console.log(`📊 SUBTÍTULO nível ${level} detectado: "${trimmed.substring(0, 60)}" (${dots} ponto(s))`)
     return Math.min(level, 3) // Máximo nível 3
+  }
+  
+  // Padrão para título principal: "2 " (apenas número + espaço, SEM pontos)
+  const mainNumberingMatch = trimmed.match(/^(\d+)\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/)
+  if (mainNumberingMatch) {
+    console.log(`📊 TÍTULO PRINCIPAL nível 1 detectado: "${trimmed.substring(0, 60)}"`)
+    return 1
   }
   
   const mainKeywords = ['INTRODUÇÃO', 'CONCLUSÃO', 'REFERÊNCIAS', 'DESENVOLVIMENTO', 'RESUMO', 'ABSTRACT']
