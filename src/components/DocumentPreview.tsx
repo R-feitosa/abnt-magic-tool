@@ -155,8 +155,7 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
                   text: element.content.toUpperCase(),
                   font: 'Times New Roman',
                   size: 24,
-                  bold: true,
-                  color: '000000'
+                  bold: true
                 })
               ],
               alignment: AlignmentType.LEFT,
@@ -164,6 +163,10 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
                 before: index === 0 ? 0 : 360,
                 after: 240,
                 line: 360
+              },
+              indent: {
+                left: 0,
+                firstLine: 0
               }
             })
           )
@@ -177,8 +180,7 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
                   text: element.content,
                   font: 'Times New Roman',
                   size: 24,
-                  bold: true,
-                  color: '000000'
+                  bold: true
                 })
               ],
               alignment: AlignmentType.LEFT,
@@ -186,6 +188,10 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
                 before: 240,
                 after: 120,
                 line: 360
+              },
+              indent: {
+                left: 0,
+                firstLine: 0
               }
             })
           )
@@ -198,14 +204,14 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
                 new TextRun({
                   text: element.content,
                   font: 'Times New Roman',
-                  size: 24,
-                  color: '000000'
+                  size: 24
                 })
               ],
               alignment: AlignmentType.JUSTIFIED,
               spacing: {
                 line: 360,
-                after: 240 // Espaço de 1 linha após cada parágrafo
+                before: 0,
+                after: 0
               },
               indent: {
                 firstLine: 708
