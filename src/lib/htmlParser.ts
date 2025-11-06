@@ -23,6 +23,11 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as Element
       const tagName = element.tagName.toLowerCase()
+      
+      console.log('🔍 Processando elemento:', { 
+        tagName, 
+        text: element.textContent?.substring(0, 80) 
+      })
 
       // Tabelas - preservar intactas
       if (tagName === 'table') {
@@ -126,18 +131,19 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
         // Detectar se é título
         const isTitle = tagName.startsWith('h') || isTitlePattern(text)
         
-        console.log('🔍 Analisando elemento:', { 
-          text: text.substring(0, 50), 
+        console.log('📝 ELEMENTO P/H:', { 
+          text: text.substring(0, 80), 
           tagName, 
           isTitle,
-          isTitlePattern: isTitlePattern(text)
+          isTitlePattern: isTitlePattern(text),
+          hasNumbering: /^\d+(\.\d+)*\.?\s+/.test(text)
         })
         
         if (isTitle) {
           const level = tagName === 'h1' ? 1 : tagName === 'h2' ? 2 : getTitleLevel(text)
           
-          console.log('✅ Elemento classificado como título:', {
-            text: text.substring(0, 50),
+          console.log('✅ CLASSIFICADO COMO TÍTULO:', {
+            text: text.substring(0, 80),
             level,
             type: level === 1 ? 'title' : 'subtitle'
           })
@@ -155,6 +161,7 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
             stats.subtitles++
           }
         } else {
+          console.log('⚠️ CLASSIFICADO COMO PARÁGRAFO:', text.substring(0, 80))
           elements.push({
             type: 'paragraph',
             content: text,
