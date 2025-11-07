@@ -5,13 +5,16 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, T
 import { saveAs } from 'file-saver'
 import { toast } from 'sonner'
 import { DocumentStructure } from '@/lib/documentStructure'
+import { FormattingStyle, formattingStyles } from '@/lib/formattingStyles'
 
 interface DocumentPreviewProps {
   content: string
   structure: DocumentStructure
+  style?: FormattingStyle
 }
 
-export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) => {
+export const DocumentPreview = ({ content, structure, style = 'abnt' }: DocumentPreviewProps) => {
+  const styleConfig = formattingStyles[style];
   const generateDocx = async () => {
     try {
       console.log('📄 Gerando DOCX com estrutura:', {
@@ -152,22 +155,19 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
             new Paragraph({
               children: [
                 new TextRun({
-                  text: element.content.toUpperCase(),
-                  font: 'Times New Roman',
-                  size: 24,
-                  bold: true
+              text: styleConfig.title.uppercase ? element.content.toUpperCase() : element.content,
+                  font: styleConfig.font,
+                  size: styleConfig.fontSize,
+                  bold: styleConfig.title.bold
                 })
               ],
-              alignment: AlignmentType.LEFT,
+              alignment: styleConfig.title.alignment,
               spacing: {
-                before: index === 0 ? 0 : 360,
-                after: 240,
-                line: 360
+                before: index === 0 ? 0 : styleConfig.title.spacingBefore,
+                after: styleConfig.title.spacingAfter,
+                line: styleConfig.lineSpacing
               },
-              indent: {
-                left: 0,
-                firstLine: 0
-              }
+              indent: styleConfig.title.indent
             })
           )
         }
@@ -177,22 +177,19 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
             new Paragraph({
               children: [
                 new TextRun({
-                  text: element.content,
-                  font: 'Times New Roman',
-                  size: 24,
-                  bold: true
+              text: styleConfig.subtitle.uppercase ? element.content.toUpperCase() : element.content,
+                  font: styleConfig.font,
+                  size: styleConfig.fontSize,
+                  bold: styleConfig.subtitle.bold
                 })
               ],
-              alignment: AlignmentType.LEFT,
+              alignment: styleConfig.subtitle.alignment,
               spacing: {
-                before: 240,
-                after: 120,
-                line: 360
+                before: styleConfig.subtitle.spacingBefore,
+                after: styleConfig.subtitle.spacingAfter,
+                line: styleConfig.lineSpacing
               },
-              indent: {
-                left: 0,
-                firstLine: 0
-              }
+              indent: styleConfig.subtitle.indent
             })
           )
         } 
@@ -202,19 +199,19 @@ export const DocumentPreview = ({ content, structure }: DocumentPreviewProps) =>
             new Paragraph({
               children: [
                 new TextRun({
-                  text: element.content,
-                  font: 'Times New Roman',
-                  size: 24
+              text: element.content,
+                  font: styleConfig.font,
+                  size: styleConfig.fontSize
                 })
               ],
-              alignment: AlignmentType.JUSTIFIED,
+              alignment: styleConfig.paragraph.alignment,
               spacing: {
-                line: 360,
-                before: 0,
-                after: 0
+                line: styleConfig.lineSpacing,
+                before: styleConfig.paragraph.spacingBefore,
+                after: styleConfig.paragraph.spacingAfter
               },
               indent: {
-                firstLine: 708
+                firstLine: styleConfig.paragraph.firstLineIndent
               }
             })
           )

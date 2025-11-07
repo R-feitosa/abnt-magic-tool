@@ -2,16 +2,19 @@ import { useState } from "react";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import { DocumentStructure } from "@/lib/documentStructure";
+import { FormattingStyle } from "@/lib/formattingStyles";
 import logo from "@/assets/logo.png";
 import fundo from "@/assets/fundo3.png";
 
 const Index = () => {
   const [documentContent, setDocumentContent] = useState<string | null>(null);
   const [documentStructure, setDocumentStructure] = useState<DocumentStructure | null>(null);
+  const [formattingStyle, setFormattingStyle] = useState<FormattingStyle>('abnt');
 
-  const handleTextSubmit = (text: string, structure: DocumentStructure) => {
+  const handleTextSubmit = (text: string, structure: DocumentStructure, style: string) => {
     setDocumentContent(text);
     setDocumentStructure(structure);
+    setFormattingStyle(style as FormattingStyle);
   };
 
   return (
@@ -84,7 +87,11 @@ const Index = () => {
                   </button>
                 </div>
                 {documentStructure && (
-                  <DocumentPreview content={documentContent} structure={documentStructure} />
+                  <DocumentPreview 
+                    content={documentContent} 
+                    structure={documentStructure}
+                    style={formattingStyle}
+                  />
                 )}
               </div>
             )}
