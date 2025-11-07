@@ -381,8 +381,8 @@ export const DocumentPreview = ({ content, structure, style = 'abnt' }: Document
                   return (
                     <div key={index} className="relative">
                       {element.needsFormatting && (
-                        <span className="absolute -top-2 -left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded z-10">
-                          ✏️ Formatado ABNT
+                        <span className="absolute -top-2 -left-2 bg-purple-600 text-white text-xs px-2 py-1 rounded z-10">
+                          ✏️ Subtítulo
                         </span>
                       )}
                       <h3

@@ -128,7 +128,7 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
           return
         }
 
-        // Detectar se é título
+        // Detectar se é título ou subtítulo
         const isTitle = tagName.startsWith('h') || isTitlePattern(text)
         
         console.log('📝 ELEMENTO P/H:', { 
@@ -140,16 +140,17 @@ export const parseHtmlToStructure = (html: string): DocumentStructure => {
         })
         
         if (isTitle) {
-          const level = tagName === 'h1' ? 1 : tagName === 'h2' ? 2 : getTitleLevel(text)
+          const level = getTitleLevel(text)
+          const type = level === 1 ? 'title' : 'subtitle'
           
-          console.log('✅ CLASSIFICADO COMO TÍTULO:', {
+          console.log('✅ CLASSIFICADO COMO:', {
             text: text.substring(0, 80),
             level,
-            type: level === 1 ? 'title' : 'subtitle'
+            type
           })
           
           elements.push({
-            type: level === 1 ? 'title' : 'subtitle',
+            type,
             content: text,
             level,
             needsFormatting: true
